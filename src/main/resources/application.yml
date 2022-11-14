@@ -1,0 +1,23 @@
+graphql:
+  servlet:
+    mapping: /graphql
+    enabled: true
+    corsEnabled: false
+  extended-scalars: Long, DateTime, PositiveFloat
+  graphiql:
+    mapping: /graphiql
+    endpoint:
+      graphql: /graphql
+    enabled: true
+    pageTitle: GraphiQL
+spring:
+  datasource:
+    url: &dbURL jdbc:mysql://localhost:3306/payments_processor2
+    username: &dbUser payments_admin
+    password: &dbPassword qARHcwPbNnabr3ru
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+    hibernate:
+      ddl-auto: update

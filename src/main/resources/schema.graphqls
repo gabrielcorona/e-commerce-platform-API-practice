@@ -1,0 +1,45 @@
+type Query {
+    sales: [Payment]
+    salesInterval(filter: PaymentFilter): [Payment]
+}
+
+scalar Long
+scalar PositiveFloat
+type Mutation {
+  createPayment(
+    customer_id: String
+    price: String!
+    price_modifier: PositiveFloat
+    payment_method: String
+    datetime: String
+    additional_item: PaymentAdditional
+  ): PaymentResponse
+}
+
+scalar Long
+scalar DateTime
+scalar PositiveFloat
+type Payment {
+    id: Long
+    datetime: DateTime
+    sales: String
+    payment_method: String!
+    points: Int
+}
+
+type PaymentResponse {
+    final_price: String
+    points: Int
+}
+
+input PaymentAdditional {
+    last_4: String
+    bank: String
+    cheque: String
+    courier: String
+}
+
+input PaymentFilter {
+  startDateTime: String
+  endDateTime: String
+}
