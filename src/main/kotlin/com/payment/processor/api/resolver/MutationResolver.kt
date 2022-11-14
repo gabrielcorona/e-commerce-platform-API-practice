@@ -15,8 +15,11 @@ class MutationResolver (private val paymentService: PaymentService) : GraphQLMut
     fun createPayment(customer_id: String, price: String, price_modifier: Float, payment_method: String, datetime: String, additional_item: PaymentAdditional?=null): PaymentResponse {
         var payment: Payment
         var paymentAdditional:PaymentAdditional? = null
-        if(paymentService.dataTools.validateAditional(additional_item,payment_method))
-            println("OK")
+
+        // Validating additional information before processing.
+        paymentService.dataTools.validateAditional(additional_item,payment_method)
+        
+        // Validate and create the Payment Additional information instance if the valid data has been provided.
         if(additional_item?.last_4 != null || additional_item?.bank != null || additional_item?.cheque != null || additional_item?.courier != null){
                 paymentAdditional = 
                     PaymentAdditional(
@@ -26,6 +29,7 @@ class MutationResolver (private val paymentService: PaymentService) : GraphQLMut
                         courier = additional_item.courier
                     )
         }
+        // Creating the payment entify once we have already instanced the Payment Additional information
         payment = paymentService.addPayment(
             Payment(
                 customer_id = customer_id,

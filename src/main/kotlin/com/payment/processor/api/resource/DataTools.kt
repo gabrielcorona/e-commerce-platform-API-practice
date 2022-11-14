@@ -6,12 +6,14 @@ import com.payment.processor.api.model.PaymentCriteria
 import com.payment.processor.api.model.PaymentAdditional
 import com.payment.processor.api.resource.PaymentAdditionalInvalidDataException
 import java.time.OffsetDateTime
+import java.time.format.DateTimeParseException
 
 class DataTools(val paymentCriteriaRepository: PaymentCriteriaRepository){
     val availableMethods: HashMap<String, HashMap<String,String>> = HashMap<String,HashMap<String,String>>()
     init {
         loadPaymentMethods()
-        savePaymentMethods()
+        //loadDefaultMethods()
+        //savePaymentMethods()
     }
     fun evaluatePoints (price: Float, method: String) : Int {
         // retrieving mapped points from the configuration for the provided payment method
@@ -24,6 +26,8 @@ class DataTools(val paymentCriteriaRepository: PaymentCriteriaRepository){
         return points
     }
     
+    // This function evaluates the value in the allowed range for the final price.
+    // It's important to mention that it just validates the range and will adjust it to the min or max accordingly. 
     fun evaluateSales (price: Float, price_modifier: Float, method: String) : String {
         var final_price:Float=price*price_modifier
 
@@ -43,17 +47,20 @@ class DataTools(val paymentCriteriaRepository: PaymentCriteriaRepository){
         return final_price.toString() 
     }
 
+    // This provides a quick parsing for the date time values
     fun validDate(datetime:String):OffsetDateTime{
+        // Pending format validation
         var date:OffsetDateTime = OffsetDateTime.parse(datetime);
         return date;
     }
 
+    // This provides the date time default value to ve the current time.
     fun getDateDef(datetime:String):OffsetDateTime{
-        var date:OffsetDateTime
+        var date: OffsetDateTime = OffsetDateTime.now()
         try{
             date = OffsetDateTime.parse(datetime);
-        }catch(ex:NullPointerException){
-            date = OffsetDateTime.now()
+        }catch(dtex:DateTimeParseException){
+            println("The provided date is null")
         }
         return date;
     }
@@ -63,13 +70,15 @@ class DataTools(val paymentCriteriaRepository: PaymentCriteriaRepository){
         return number.matches(regex)
     }
 
+    // This function validates the additional information to be consistant with the payment method.
+    // If an inconcistency is encounter, an exception will be thrown notifying the error in the custom message response.
     fun validateAditional(paymentAdditional:PaymentAdditional?,payment_method:String):Boolean {
         var valid=true
         val last4=!paymentAdditional?.last_4.isNullOrEmpty()
         val bank=!paymentAdditional?.bank.isNullOrEmpty()
         val courier=!paymentAdditional?.courier.isNullOrEmpty()
         val cheque=!paymentAdditional?.cheque.isNullOrEmpty()
-        val reqAtt = availableMethods?.get(payment_method)?.get("REQUIRE_TEMP")+""
+        val reqAtt = availableMethods.get(payment_method)?.get("REQUIRE_TEMP").toString()
         when(reqAtt){
             "COURIER|YAMATO,SAGAWA" -> {
                 if(last4 || bank || cheque)
@@ -108,17 +117,19 @@ class DataTools(val paymentCriteriaRepository: PaymentCriteriaRepository){
         return valid;
     }
 
+    // This function throws the exception displaying the message in the response
     fun failCondition(message:String):Boolean{
         println(message)
         throw PaymentAdditionalInvalidDataException(message,null)
         return false;
     }
 
+    // This saves in the database the loaded payment criteria that is used to calculate the points and the validity of the request.
     fun savePaymentMethods(){
         println("Saving")
         availableMethods.forEach{ entry ->
             println(entry.key)
-            /*
+            
             paymentCriteriaRepository.save(
             PaymentCriteria(
                     paymentMethod = entry.key,
@@ -128,11 +139,12 @@ class DataTools(val paymentCriteriaRepository: PaymentCriteriaRepository){
                     requireAttributes = entry.value.get("REQUIRE_TEMP")
                 )
             )
-            */
+            
         }
             
     }
 
+    // This function loads the payment methods from the database.
     fun loadPaymentMethods(){
         println("Loading")
         var methodValues:HashMap<String,String> = HashMap<String,String>()
@@ -146,6 +158,7 @@ class DataTools(val paymentCriteriaRepository: PaymentCriteriaRepository){
         }
     }
 
+    // This function load the default methods without having it loaded from the database.
     fun loadDefaultMethods(){        
         var methodValues:HashMap<String,String> = HashMap<String,String>()
         methodValues.put("PRICE_MAX_TEMP","[PRICE]")
